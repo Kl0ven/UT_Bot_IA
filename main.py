@@ -28,9 +28,18 @@ with tf.compat.v1.Session() as sess:
 	gr = GameRunner(sess, model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
 	num_episodes = 300
 	cnt = 0
+	action = gr._choose_action(env.reset())
 	while cnt < num_episodes:
-		print('Episode {} of {}'.format(cnt + 1, num_episodes))
-		gr.run()
+		if cnt % 10 == 0:
+			print('Episode {} of {}'.format(cnt + 1, num_episodes))
+		while True:
+			next_state, reward, done, info = env.step(action)
+			action = gr.update(next_state, reward, done)
+			if done:
+				gr.reset()
+				break
+			gr._replay()
+
 		cnt += 1
 	plt.plot(gr.reward_store)
 	plt.show()

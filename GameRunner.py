@@ -19,49 +19,50 @@ class GameRunner:
 		self._gamma = gamma
 		self._reward_store = []
 		self._max_x_store = []
+		self._prev_state = None
+		self._tot_reward = 0
+		self._max_x = -100
+		self._prev_action = None
+		self._prev_reward = None
 
-	def run(self):
-		state = self._env.reset()
-		tot_reward = 0
-		max_x = -100
-		while True:
-			if self._render:
-				self._env.render()
+	def update(self, state, reward, done):
+		if self._render:
+			self._env.render()
+		action = self._choose_action(state)
+		reward = self.compute_reward(state, reward)
+		if state[0] > self._max_x:
+			self._max_x = state[0]
+		if done:
+			state = None
+		if self._prev_state is not None and self._prev_action is not None and self._prev_reward is not None:
+			self._memory.add_sample((self._prev_state, self._prev_action, self._prev_reward, state))
+		self.decay()
+		self._prev_state = state
+		self._prev_action = action
+		self._prev_reward = reward
+		self._tot_reward += reward
+		return action
 
-			action = self._choose_action(state)
-			next_state, reward, done, info = self._env.step(action)
-			if next_state[0] >= 0.1:
-				reward += 10
-			elif next_state[0] >= 0.25:
-				reward += 20
-			elif next_state[0] >= 0.5:
-				reward += 100
+	def compute_reward(self, next_state, reward):
+		if next_state[0] >= 0.1:
+			reward += 10
+		elif next_state[0] >= 0.25:
+			reward += 20
+		elif next_state[0] >= 0.5:
+			reward += 100
+		return reward
 
-			if next_state[0] > max_x:
-				max_x = next_state[0]
-			# is the game complete? If so, set the next state to
-			# None for storage sake
-			if done:
-				next_state = None
+	def reset(self):
+		print("Step {}, Total reward: {}, Eps: {}".format(self._steps, self._tot_reward, self._eps))
+		self._reward_store.append(self._tot_reward)
+		self._max_x_store.append(self._max_x)
+		self._prev_state = self._env.reset()
+		self._tot_reward = 0
+		self._max_x = -100
 
-			self._memory.add_sample((state, action, reward, next_state))
-			self._replay()
-
-			# exponentially decay the eps value
-			self._steps += 1
-			self._eps = self._min_eps + (self._max_eps - self._min_eps) * math.exp(-self._decay * self._steps)
-
-			# move the agent to the next state and accumulate the reward
-			state = next_state
-			tot_reward += reward
-
-			# if the game is done, break the loop
-			if done:
-				self._reward_store.append(tot_reward)
-				self._max_x_store.append(max_x)
-				break
-
-		print("Step {}, Total reward: {}, Eps: {}".format(self._steps, tot_reward, self._eps))
+	def decay(self):
+		self._steps += 1
+		self._eps = self._min_eps + (self._max_eps - self._min_eps) * math.exp(-self._decay * self._steps)
 
 	def _choose_action(self, state):
 		if random.random() < self._eps:
@@ -71,6 +72,8 @@ class GameRunner:
 
 	def _replay(self):
 		batch = self._memory.sample(self._model.batch_size)
+		if len(batch) == 0:
+			return
 		states = np.array([val[0] for val in batch])
 		next_states = np.array([(np.zeros(self._model.num_states) if val[3] is None else val[3]) for val in batch])
 		# predict Q(s,a) given the batch of states
