@@ -4,9 +4,8 @@ import numpy as np
 
 
 class GameRunner:
-	def __init__(self, sess, model, env, memory, max_eps, min_eps,
+	def __init__(self, model, env, memory, max_eps, min_eps,
 														decay, gamma, render=True):
-		self._sess = sess
 		self._env = env
 		self._model = model
 		self._memory = memory
@@ -68,7 +67,7 @@ class GameRunner:
 		if random.random() < self._eps:
 			return random.randint(0, self._model.num_actions - 1)
 		else:
-			return np.argmax(self._model.predict_one(state, self._sess))
+			return np.argmax(self._model.predict_one(state))
 
 	def _replay(self):
 		batch = self._memory.sample(self._model.batch_size)
@@ -77,9 +76,9 @@ class GameRunner:
 		states = np.array([val[0] for val in batch])
 		next_states = np.array([(np.zeros(self._model.num_states) if val[3] is None else val[3]) for val in batch])
 		# predict Q(s,a) given the batch of states
-		q_s_a = self._model.predict_batch(states, self._sess)
+		q_s_a = self._model.predict_batch(states)
 		# predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
-		q_s_a_d = self._model.predict_batch(next_states, self._sess)
+		q_s_a_d = self._model.predict_batch(next_states)
 		# setup training arrays
 		x = np.zeros((len(batch), self._model.num_states))
 		y = np.zeros((len(batch), self._model.num_actions))
@@ -96,7 +95,7 @@ class GameRunner:
 				current_q[action] = reward + self._gamma * np.amax(q_s_a_d[i])
 			x[i] = state
 			y[i] = current_q
-		self._model.train_batch(self._sess, x, y)
+		self._model.train_batch(x, y)
 
 	@property
 	def reward_store(self):
