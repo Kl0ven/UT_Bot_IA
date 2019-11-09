@@ -5,6 +5,9 @@ from Model import Model
 import gym
 import matplotlib.pylab as plt
 
+
+tf.compat.v1.disable_eager_execution()
+
 MAX_EPSILON = 1
 MIN_EPSILON = 0.01
 LAMBDA = 0.0001
@@ -19,11 +22,8 @@ num_states = env.env.observation_space.shape[0]
 num_actions = env.env.action_space.n
 
 model = Model(num_actions, num_states, BATCH_SIZE)
-model.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError())
-model.build((None, num_states))
-model.summary()
 mem = Memory(MEMORY_SIZE)
-gr = GameRunner(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
+gr = GameRunner(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, True)
 
 
 num_episodes = 300
