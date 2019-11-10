@@ -6,7 +6,7 @@ import gym
 import matplotlib.pylab as plt
 
 
-tf.compat.v1.disable_eager_execution()
+# tf.compat.v1.disable_eager_execution()
 
 MAX_EPSILON = 1
 MIN_EPSILON = 0.01
@@ -14,6 +14,8 @@ LAMBDA = 0.0001
 GAMMA = 0.99
 BATCH_SIZE = 50
 MEMORY_SIZE = 50000
+
+writer = tf.summary.create_file_writer("results")
 
 env_name = 'MountainCar-v0'
 env = gym.make(env_name)
@@ -25,22 +27,24 @@ model = Model(num_actions, num_states, BATCH_SIZE)
 mem = Memory(MEMORY_SIZE)
 ag = Agent(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
 
-
-num_episodes = 3
+num_episodes = 500
 cnt = 0
 action = ag._choose_action(env.reset())
-while cnt < num_episodes:
-	if cnt % 10 == 0:
-		print('Episode {} of {}'.format(cnt + 1, num_episodes))
-	while True:
-		next_state, reward, done, info = env.step(action)
-		action = ag.update(next_state, reward, done)
-		if done:
-			ag.reset()
-			break
-		ag._replay()
-
-	cnt += 1
+with writer.as_default():
+	while cnt < num_episodes:
+		if cnt % 10 == 0:
+			print('Episode {} of {}'.format(cnt + 1, num_episodes))
+		while True:
+			next_state, reward, done, info = env.step(action)
+			action = ag.update(next_state, reward, done)
+			if done:
+				ag.reset()
+				break
+			ag._replay()
+		tf.summary.scalar("max_x", ag.max_x, step=cnt)
+		tf.summary.scalar("reward", ag.reward, step=cnt)
+		writer.flush()
+		cnt += 1
 plt.plot(ag.reward_store)
 plt.show()
 plt.close("all")

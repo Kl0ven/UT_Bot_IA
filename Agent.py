@@ -18,11 +18,14 @@ class Agent:
 		self._gamma = gamma
 		self._reward_store = []
 		self._max_x_store = []
+		self._eps_store = []
 		self._prev_state = None
 		self._tot_reward = 0
 		self._max_x = -100
 		self._prev_action = None
 		self._prev_reward = None
+		self._min_reward = -200
+		self._max_reward = 200
 
 	def update(self, state, reward, done):
 		if self._render:
@@ -107,5 +110,17 @@ class Agent:
 		return self._reward_store
 
 	@property
+	def max_x(self):
+		return self._max_x_store[-1]
+
+	@property
+	def reward(self):
+		return self._reward_store[-1]
+
+	@property
 	def max_x_store(self):
 		return self._max_x_store
+
+	@property
+	def eps_store(self):
+		return self._eps_store
