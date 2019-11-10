@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 
-class GameRunner:
+class Agent:
 	def __init__(self, model, env, memory, max_eps, min_eps,
 														decay, gamma, render=True):
 		self._env = env
@@ -27,14 +27,19 @@ class GameRunner:
 	def update(self, state, reward, done):
 		if self._render:
 			self._env.render()
+
 		action = self._choose_action(state)
 		reward = self.compute_reward(state, reward)
+
 		if state[0] > self._max_x:
 			self._max_x = state[0]
+
 		if done:
 			state = None
+
 		if self._prev_state is not None and self._prev_action is not None and self._prev_reward is not None:
 			self._memory.add_sample((self._prev_state, self._prev_action, self._prev_reward, state))
+
 		self.decay()
 		self._prev_state = state
 		self._prev_action = action

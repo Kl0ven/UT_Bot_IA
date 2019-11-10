@@ -1,5 +1,5 @@
 import tensorflow as tf
-from GameRunner import GameRunner
+from Agent import Agent
 from Memory import Memory
 from Model import Model
 import gym
@@ -23,26 +23,26 @@ num_actions = env.env.action_space.n
 
 model = Model(num_actions, num_states, BATCH_SIZE)
 mem = Memory(MEMORY_SIZE)
-gr = GameRunner(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, True)
+ag = Agent(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
 
 
-num_episodes = 300
+num_episodes = 3
 cnt = 0
-action = gr._choose_action(env.reset())
+action = ag._choose_action(env.reset())
 while cnt < num_episodes:
 	if cnt % 10 == 0:
 		print('Episode {} of {}'.format(cnt + 1, num_episodes))
 	while True:
 		next_state, reward, done, info = env.step(action)
-		action = gr.update(next_state, reward, done)
+		action = ag.update(next_state, reward, done)
 		if done:
-			gr.reset()
+			ag.reset()
 			break
-		gr._replay()
+		ag._replay()
 
 	cnt += 1
-plt.plot(gr.reward_store)
+plt.plot(ag.reward_store)
 plt.show()
 plt.close("all")
-plt.plot(gr.max_x_store)
+plt.plot(ag.max_x_store)
 plt.show()

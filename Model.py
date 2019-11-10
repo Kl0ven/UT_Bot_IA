@@ -13,8 +13,8 @@ class Model(tf.keras.Model):
 		self.hidden1 = kl.Dense(50, activation='relu', name='h1')
 		self.hidden2 = kl.Dense(50, activation='relu', name='h2')
 		# logits are unnormalized log probabilities
-		self.logits = kl.Dense(num_actions, name='policy_logits')
-		self.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError())
+		self.logits = kl.Dense(num_actions, name='output')
+		self.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError(), metrics=['accuracy'])
 		self.build((None, num_states))
 		self.summary(100)
 
@@ -32,7 +32,7 @@ class Model(tf.keras.Model):
 		return self.predict(states)
 
 	def train_batch(self, x_batch, y_batch):
-		self.train_on_batch(x=x_batch, y=y_batch)
+		return self.train_on_batch(x=x_batch, y=y_batch)
 
 	@property
 	def num_actions(self):
