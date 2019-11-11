@@ -70,6 +70,7 @@ class Agent:
 	def decay(self):
 		self._steps += 1
 		self._eps = self._min_eps + (self._max_eps - self._min_eps) * math.exp(-self._decay * self._steps)
+		self.eps_store.append(self._eps)
 
 	def _choose_action(self, state):
 		if random.random() < self._eps:

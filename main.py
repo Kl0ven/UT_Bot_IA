@@ -59,8 +59,11 @@ with writer.as_default():
 		writer.flush()
 		cnt += 1
 save(model)
+
+plt.subplot(311)
 plt.plot(ag.reward_store)
-plt.show()
-plt.close("all")
+plt.subplot(312)
 plt.plot(ag.max_x_store)
+plt.subplot(313)
+plt.plot(ag.eps_store)
 plt.show()
