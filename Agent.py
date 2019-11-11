@@ -124,3 +124,11 @@ class Agent:
 	@property
 	def eps_store(self):
 		return self._eps_store
+
+	@property
+	def max_eps(self):
+		return self._max_eps
+
+	@max_eps.setter
+	def max_eps(self, value):
+		self._max_eps = value
