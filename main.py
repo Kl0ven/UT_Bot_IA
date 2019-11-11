@@ -4,8 +4,13 @@ from Memory import Memory
 from Model import Model
 import gym
 import matplotlib.pylab as plt
-from utils import save
+from utils import save, load
+import sys
 
+
+# For tensorboard to work you need to enable eager mode
+# But with eager mode enable the learning is slower due to some bug
+# https://github.com/tensorflow/tensorflow/issues/33052
 tf.compat.v1.disable_eager_execution()
 
 MAX_EPSILON = 1
@@ -27,7 +32,12 @@ model = Model(num_actions, num_states, BATCH_SIZE)
 mem = Memory(MEMORY_SIZE)
 ag = Agent(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
 
-num_episodes = 3
+for i, arg in enumerate(sys.argv):
+	if arg == "load":
+		print("Loading model {}".format(sys.argv[i + 1]))
+		load(model, sys.argv[i + 1])
+
+num_episodes = 300
 cnt = 0
 action = ag._choose_action(env.reset())
 with writer.as_default():
