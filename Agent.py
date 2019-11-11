@@ -70,6 +70,7 @@ class Agent:
 	def decay(self):
 		self._steps += 1
 		self._eps = self._min_eps + (self._max_eps - self._min_eps) * math.exp(-self._decay * self._steps)
+		self.eps_store.append(self._eps)
 
 	def _choose_action(self, state):
 		if random.random() < self._eps:
@@ -124,3 +125,11 @@ class Agent:
 	@property
 	def eps_store(self):
 		return self._eps_store
+
+	@property
+	def max_eps(self):
+		return self._max_eps
+
+	@max_eps.setter
+	def max_eps(self, value):
+		self._max_eps = value
