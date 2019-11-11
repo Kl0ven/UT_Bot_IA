@@ -38,7 +38,7 @@ for i, arg in enumerate(sys.argv):
 		load(model, sys.argv[i + 1])
 	elif arg == "eps":
 		eps = float(sys.argv[i + 1])
-		ag.max_eps(eps)
+		ag.max_eps = eps
 
 num_episodes = 300
 cnt = 0
