@@ -4,9 +4,9 @@ from Memory import Memory
 from Model import Model
 import gym
 import matplotlib.pylab as plt
+from utils import save
 
-
-# tf.compat.v1.disable_eager_execution()
+tf.compat.v1.disable_eager_execution()
 
 MAX_EPSILON = 1
 MIN_EPSILON = 0.01
@@ -27,7 +27,7 @@ model = Model(num_actions, num_states, BATCH_SIZE)
 mem = Memory(MEMORY_SIZE)
 ag = Agent(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
 
-num_episodes = 500
+num_episodes = 3
 cnt = 0
 action = ag._choose_action(env.reset())
 with writer.as_default():
@@ -45,6 +45,7 @@ with writer.as_default():
 		tf.summary.scalar("reward", ag.reward, step=cnt)
 		writer.flush()
 		cnt += 1
+save(model)
 plt.plot(ag.reward_store)
 plt.show()
 plt.close("all")
