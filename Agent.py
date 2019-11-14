@@ -60,7 +60,6 @@ class Agent:
 		return reward
 
 	def reset(self):
-		print("Step {}, Total reward: {}, Eps: {}".format(self._steps, self._tot_reward, self._eps))
 		self._reward_store.append(self._tot_reward)
 		self._max_x_store.append(self._max_x)
 		self._prev_state = self._env.reset()

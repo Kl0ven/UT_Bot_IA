@@ -13,7 +13,7 @@ import datetime
 # For tensorboard to work you need to enable eager mode
 # But with eager mode enable the learning is slower due to some bug
 # https://github.com/tensorflow/tensorflow/issues/33052
-# tf.compat.v1.disable_eager_execution()
+tf.compat.v1.disable_eager_execution()
 
 MAX_EPSILON = 1
 MIN_EPSILON = 0.01
@@ -57,6 +57,7 @@ with writer.as_default():
 			next_state, reward, done, info = env.step(action)
 			action = ag.update(next_state, reward, done)
 			if done:
+				print("Step {0}, Total reward: {1}, Eps: {2:.4f}, time: {3:.2f}ms".format(ag._steps, ag._tot_reward, ag._eps, np.mean(times)))
 				ag.reset()
 				break
 			ag._replay()
