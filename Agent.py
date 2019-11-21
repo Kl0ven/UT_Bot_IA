@@ -1,14 +1,16 @@
 import random
 import math
 import numpy as np
-import time
+from Model import train_batch, predict_one, predict_batch
 
 
 class Agent:
-	def __init__(self, model, env, memory, max_eps, min_eps,
+	def __init__(self, BATCH_SIZE, env, num_actions, num_states, memory, max_eps, min_eps,
 														decay, gamma, render=True):
 		self._env = env
-		self._model = model
+		self._batch_size = BATCH_SIZE
+		self._num_actions = num_actions
+		self._num_states = num_states
 		self._memory = memory
 		self._render = render
 		self._max_eps = max_eps
@@ -74,28 +76,23 @@ class Agent:
 
 	def _choose_action(self, state):
 		if random.random() < self._eps:
-			return random.randint(0, self._model.num_actions - 1)
+			return random.randint(0, self._num_actions - 1)
 		else:
-			return np.argmax(self._model.predict_one(state))
+			return np.argmax(predict_one(np.array([state])))
 
 	def _replay(self):
-		times = []
-		starttime = time.time() * 1000
-		batch = self._memory.sample(self._model.batch_size)
+		batch = self._memory.sample(self._batch_size)
 		if len(batch) == 0:
 			return
 		states = np.array([val[0] for val in batch])
-		next_states = np.array([(np.zeros(self._model.num_states) if val[3] is None else val[3]) for val in batch])
-		times.append(time.time() * 1000 - starttime)
+		next_states = np.array([(np.zeros(self._num_states) if val[3] is None else val[3]) for val in batch])
 		# predict Q(s,a) given the batch of states
-		q_s_a = self._model.predict_batch(states)
-		times.append(time.time() * 1000 - starttime)
+		q_s_a = predict_batch(states).numpy()
 		# predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
-		q_s_a_d = self._model.predict_batch(next_states)
-		times.append(time.time() * 1000 - starttime)
+		q_s_a_d = predict_batch(next_states).numpy()
 		# setup training arrays
-		x = np.zeros((len(batch), self._model.num_states))
-		y = np.zeros((len(batch), self._model.num_actions))
+		x = np.zeros((len(batch), self._num_states))
+		y = np.zeros((len(batch), self._num_actions))
 		for i, b in enumerate(batch):
 			state, action, reward, next_state = b[0], b[1], b[2], b[3]
 			# get the current q values for all actions in state
@@ -109,10 +106,7 @@ class Agent:
 				current_q[action] = reward + self._gamma * np.amax(q_s_a_d[i])
 			x[i] = state
 			y[i] = current_q
-		times.append(time.time() * 1000 - starttime)
-		self._model.train_batch(x, y)
-		times.append(time.time() * 1000 - starttime)
-		return times
+		train_batch(x, y)
 
 	@property
 	def reward_store(self):

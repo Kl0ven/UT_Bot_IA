@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Agent import Agent
 from Memory import Memory
-from Model import Model
+from Model import model, train_loss
 import gym
 import matplotlib.pylab as plt
 from utils import save, load
@@ -19,7 +19,7 @@ MAX_EPSILON = 1
 MIN_EPSILON = 0.01
 LAMBDA = 0.0001
 GAMMA = 0.99
-BATCH_SIZE = 1
+BATCH_SIZE = 50
 MEMORY_SIZE = 50000
 
 folder = datetime.datetime.now().strftime("%d-%m-%Y - %Hh %Mm %Ss")
@@ -31,9 +31,8 @@ env = gym.make(env_name)
 num_states = env.env.observation_space.shape[0]
 num_actions = env.env.action_space.n
 
-model = Model(num_actions, num_states, BATCH_SIZE)
 mem = Memory(MEMORY_SIZE)
-ag = Agent(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
+ag = Agent(BATCH_SIZE, env, num_actions, num_states, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
 
 for i, arg in enumerate(sys.argv):
 	if arg == "load":
@@ -48,7 +47,6 @@ cnt = 0
 action = ag._choose_action(env.reset())
 starttime = time.time() * 1000
 times = []
-debug_times = []
 with writer.as_default():
 	while cnt < num_episodes:
 		if cnt % 10 == 0:
@@ -58,21 +56,18 @@ with writer.as_default():
 			next_state, reward, done, info = env.step(action)
 			action = ag.update(next_state, reward, done)
 			if done:
-				debug_times = np.array(debug_times)
-				print(debug_times.shape)
-				print("Step {0}, Total reward: {1}, Eps: {2:.4f}, time: {3:.2f}ms timing {4}".format(ag._steps, ag._tot_reward, ag._eps, np.mean(times), debug_times.mean(axis=0).astype(int)))
-				debug_times = []
+				print("Step {0}, Total reward: {1}, Eps: {2:.4f}, time: {3:.2f}ms".format(ag._steps, ag._tot_reward, ag._eps, np.mean(times)))
 				ag.reset()
 				break
-			t = ag._replay()
-			if t is not None:
-				debug_times.append(t)
+			ag._replay()
 			currenttime = time.time() * 1000
 			times.append(currenttime - starttime)
 			starttime = currenttime
 		tf.summary.scalar("max_x", ag.max_x, step=cnt)
+		tf.summary.scalar("loss", train_loss.result(), step=cnt)
 		tf.summary.scalar("reward", ag.reward, step=cnt)
 		tf.summary.scalar("Time", np.mean(times), step=cnt)
+		train_loss.reset_states()
 		writer.flush()
 		cnt += 1
 save(model)
