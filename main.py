@@ -1,7 +1,7 @@
 import tensorflow as tf
 from Agent import Agent
 from Memory import Memory
-from Model import model, train_loss
+from Model import Model
 import gym
 import matplotlib.pylab as plt
 from utils import save, load
@@ -16,7 +16,7 @@ import datetime
 # tf.compat.v1.disable_eager_execution()
 
 MAX_EPSILON = 1
-MIN_EPSILON = 0.01
+MIN_EPSILON = 0.001
 LAMBDA = 0.0001
 GAMMA = 0.99
 BATCH_SIZE = 50
@@ -31,13 +31,14 @@ env = gym.make(env_name)
 num_states = env.env.observation_space.shape[0]
 num_actions = env.env.action_space.n
 
+model = Model(num_actions, num_states, BATCH_SIZE)
 mem = Memory(MEMORY_SIZE)
-ag = Agent(BATCH_SIZE, env, num_actions, num_states, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
+ag = Agent(model, env, mem, MAX_EPSILON, MIN_EPSILON, LAMBDA, GAMMA, False)
 
 for i, arg in enumerate(sys.argv):
 	if arg == "load":
 		print("Loading model {}".format(sys.argv[i + 1]))
-		load(model, sys.argv[i + 1])
+		load(model.model, sys.argv[i + 1])
 	elif arg == "eps":
 		eps = float(sys.argv[i + 1])
 		ag.max_eps = eps
@@ -56,7 +57,7 @@ with writer.as_default():
 			next_state, reward, done, info = env.step(action)
 			action = ag.update(next_state, reward, done)
 			if done:
-				print("Step {0}, Total reward: {1}, Eps: {2:.4f}, time: {3:.2f}ms".format(ag._steps, ag._tot_reward, ag._eps, np.mean(times)))
+				print("Step {0}, Total reward: {1}, Eps: {2:.4f}, time: {3:.2f}ms".format(ag._steps, ag._tot_reward, ag.eps, np.mean(times)))
 				ag.reset()
 				break
 			ag._replay()
@@ -64,13 +65,12 @@ with writer.as_default():
 			times.append(currenttime - starttime)
 			starttime = currenttime
 		tf.summary.scalar("max_x", ag.max_x, step=cnt)
-		tf.summary.scalar("loss", train_loss.result(), step=cnt)
+		tf.summary.scalar("eps", ag.eps, step=cnt)
 		tf.summary.scalar("reward", ag.reward, step=cnt)
 		tf.summary.scalar("Time", np.mean(times), step=cnt)
-		train_loss.reset_states()
 		writer.flush()
 		cnt += 1
-save(model)
+save(model.model)
 
 plt.subplot(311)
 plt.plot(ag.reward_store)
