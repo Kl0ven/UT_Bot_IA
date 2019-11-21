@@ -1,6 +1,7 @@
 import random
 import math
 import numpy as np
+import time
 
 
 class Agent:
@@ -78,15 +79,20 @@ class Agent:
 			return np.argmax(self._model.predict_one(state))
 
 	def _replay(self):
+		times = []
+		starttime = time.time() * 1000
 		batch = self._memory.sample(self._model.batch_size)
 		if len(batch) == 0:
 			return
 		states = np.array([val[0] for val in batch])
 		next_states = np.array([(np.zeros(self._model.num_states) if val[3] is None else val[3]) for val in batch])
+		times.append(time.time() * 1000 - starttime)
 		# predict Q(s,a) given the batch of states
 		q_s_a = self._model.predict_batch(states)
+		times.append(time.time() * 1000 - starttime)
 		# predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
 		q_s_a_d = self._model.predict_batch(next_states)
+		times.append(time.time() * 1000 - starttime)
 		# setup training arrays
 		x = np.zeros((len(batch), self._model.num_states))
 		y = np.zeros((len(batch), self._model.num_actions))
@@ -103,7 +109,10 @@ class Agent:
 				current_q[action] = reward + self._gamma * np.amax(q_s_a_d[i])
 			x[i] = state
 			y[i] = current_q
+		times.append(time.time() * 1000 - starttime)
 		self._model.train_batch(x, y)
+		times.append(time.time() * 1000 - starttime)
+		return times
 
 	@property
 	def reward_store(self):
