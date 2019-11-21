@@ -1,6 +1,6 @@
 import tensorflow as tf
-import tensorflow.keras.layers as kl
-import numpy as np
+# import tensorflow.keras.layers as kl
+# import numpy as np
 
 
 class Model(tf.keras.Model):
@@ -9,30 +9,40 @@ class Model(tf.keras.Model):
 		self._num_states = num_states
 		self._num_actions = num_actions
 		self._batch_size = batch_size
-		# no tf.get_variable(), just simple Keras API
-		self.hidden1 = kl.Dense(50, activation='relu', name='h1')
-		self.hidden2 = kl.Dense(50, activation='relu', name='h2')
-		# logits are unnormalized log probabilities
-		self.logits = kl.Dense(num_actions, name='output')
-		self.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError(), metrics=['accuracy'])
-		self.build((None, num_states))
-		self.summary(100)
+		# Setting up model
+		self.model = tf.keras.models.Sequential()
+		self.model.add(tf.keras.layers.Dense(50, activation='relu', name='h1'))
+		self.model.add(tf.keras.layers.Dense(50, activation='relu', name='h2'))
+		self.model.add(tf.keras.layers.Dense(num_actions, name='output'))
+		self.model.build((None, self._num_states))
+		# The loss method
+		self.loss_object = tf.keras.losses.MeanSquaredError()
+		# The optimize
+		self.optimizer = tf.keras.optimizers.Adam()
+		# This metrics is used to track the progress of the training loss during the training
+		self.train_loss = tf.keras.metrics.Mean(name='train_loss')
 
-	def call(self, inputs):
-		# inputs is a numpy array, convert to Tensor
-		x1 = self.hidden1(inputs)
-		x2 = self.hidden2(x1)
-		return self.logits(x2)
+	@tf.function
+	def train_batch(self, x, y):
+		with tf.GradientTape() as tape:
+			# Make a prediction
+			predictions = self.model(x)
+			# Get the error/loss using the loss_object previously defined
+			loss = self.loss_object(y, predictions)
+		# Compute the gradient which respect to the loss
+		gradients = tape.gradient(loss, self.model.trainable_variables)
+		# Change the weights of the model
+		self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+		# The metrics are accumulate over time. You don't need to average it yourself.
+		self.train_loss(loss)
 
-	def predict_one(self, state):
-		state = np.array([state])
-		return self.predict(state)
+	@tf.function
+	def predict_one(self, x):
+		return self.model(x)
 
-	def predict_batch(self, states):
-		return self.predict(states)
-
-	def train_batch(self, x_batch, y_batch):
-		return self.train_on_batch(x=x_batch, y=y_batch)
+	@tf.function
+	def predict_batch(self, x):
+		return self.model(x)
 
 	@property
 	def num_actions(self):

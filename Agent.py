@@ -75,18 +75,18 @@ class Agent:
 		if random.random() < self._eps:
 			return random.randint(0, self._model.num_actions - 1)
 		else:
-			return np.argmax(self._model.predict_one(state))
+			return np.argmax(self._model.predict_one(np.array([state])))
 
 	def _replay(self):
 		batch = self._memory.sample(self._model.batch_size)
-		if len(batch) == 0:
+		if len(batch) < self._model.batch_size:
 			return
 		states = np.array([val[0] for val in batch])
 		next_states = np.array([(np.zeros(self._model.num_states) if val[3] is None else val[3]) for val in batch])
 		# predict Q(s,a) given the batch of states
-		q_s_a = self._model.predict_batch(states)
+		q_s_a = self._model.predict_batch(states).numpy()
 		# predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
-		q_s_a_d = self._model.predict_batch(next_states)
+		q_s_a_d = self._model.predict_batch(next_states).numpy()
 		# setup training arrays
 		x = np.zeros((len(batch), self._model.num_states))
 		y = np.zeros((len(batch), self._model.num_actions))
@@ -132,3 +132,7 @@ class Agent:
 	@max_eps.setter
 	def max_eps(self, value):
 		self._max_eps = value
+
+	@property
+	def eps(self):
+		return self._eps
