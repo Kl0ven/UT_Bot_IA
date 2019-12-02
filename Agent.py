@@ -4,12 +4,11 @@ import numpy as np
 
 
 class Agent:
-	def __init__(self, model, env, memory, max_eps, min_eps,
-														decay, gamma, render=True):
-		self._env = env
+	def __init__(self, model, memory, max_eps, min_eps,
+														decay, gamma):
+
 		self._model = model
 		self._memory = memory
-		self._render = render
 		self._max_eps = max_eps
 		self._min_eps = min_eps
 		self._decay = decay
@@ -17,25 +16,22 @@ class Agent:
 		self._steps = 0
 		self._gamma = gamma
 		self._reward_store = []
-		self._max_x_store = []
 		self._eps_store = []
 		self._prev_state = None
 		self._tot_reward = 0
-		self._max_x = -100
+		self._max_dist_store = []
+		self._max_dist = -100
 		self._prev_action = None
 		self._prev_reward = None
 		self._min_reward = -200
 		self._max_reward = 200
 
-	def update(self, state, reward, done):
-		if self._render:
-			self._env.render()
-
+	def update(self, state, done):
 		action = self._choose_action(state)
-		reward = self.compute_reward(state, reward)
+		reward = self.compute_reward(state)
 
-		if state[0] > self._max_x:
-			self._max_x = state[0]
+		if state[-1] > self._max_dist:
+			self._max_dist = state[-1]
 
 		if done:
 			state = None
@@ -50,7 +46,8 @@ class Agent:
 		self._tot_reward += reward
 		return action
 
-	def compute_reward(self, next_state, reward):
+	def compute_reward(self, next_state):
+		reward = -1
 		if next_state[0] >= 0.1:
 			reward += 10
 		elif next_state[0] >= 0.25:
@@ -61,10 +58,10 @@ class Agent:
 
 	def reset(self):
 		self._reward_store.append(self._tot_reward)
-		self._max_x_store.append(self._max_x)
-		self._prev_state = self._env.reset()
+		self._max_dist_store.append(self._max_dist)
+		self._prev_state = None
 		self._tot_reward = 0
-		self._max_x = -100
+		self._max_dist = -100
 
 	def decay(self):
 		self._steps += 1
@@ -110,16 +107,16 @@ class Agent:
 		return self._reward_store
 
 	@property
-	def max_x(self):
-		return self._max_x_store[-1]
+	def max_dist(self):
+		return self._max_dist_store[-1]
 
 	@property
 	def reward(self):
 		return self._reward_store[-1]
 
 	@property
-	def max_x_store(self):
-		return self._max_x_store
+	def max_dist_store(self):
+		return self._max_dist_store
 
 	@property
 	def eps_store(self):
