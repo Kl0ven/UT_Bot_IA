@@ -8,6 +8,8 @@ import time
 import numpy as np
 import datetime
 from websocket_server import WebsocketServer
+import socket
+
 
 MAX_EPSILON = 1
 MIN_EPSILON = 0.001
@@ -71,35 +73,13 @@ def new_msg(client, server, message):
 
 
 def new_client(client, server):
+	print("New client")
 	client.send_message(str(action))
 
 
 with writer.as_default():
-	server = WebsocketServer(13254, host='127.0.0.1')
+	print("Server's IP Address is:" + socket.gethostbyname(socket.gethostname()))
+	server = WebsocketServer(13254, host='0.0.0.0')
 	server.set_fn_message_received(new_msg)
 	server.set_fn_new_client(new_client)
 	server.run_forever()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# save(model.model)
