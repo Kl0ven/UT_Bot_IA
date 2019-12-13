@@ -8,8 +8,8 @@ import time
 import numpy as np
 import datetime
 from websocket_server import WebsocketServer
-import socket
-
+import netifaces as ni
+from netifaces import AF_INET
 
 MAX_EPSILON = 1
 MIN_EPSILON = 0.001
@@ -61,8 +61,10 @@ def new_msg(client, server, message):
 		tf.summary.scalar("max_dist", ag.max_dist, step=cnt)
 		tf.summary.scalar("eps", ag.eps, step=cnt)
 		tf.summary.scalar("reward", ag.reward, step=cnt)
+		tf.summary.scalar("loss", model.train_loss.result(), step=cnt)
 		tf.summary.scalar("Time", np.mean(times), step=cnt)
 		writer.flush()
+		model.train_loss.reset_states()
 		cnt += 1
 		save(model.model)
 		return
@@ -78,7 +80,11 @@ def new_client(client, server):
 
 
 with writer.as_default():
-	print("Server's IP Address is:" + socket.gethostbyname(socket.gethostname()))
+	print("Possibles ips are :")
+	for i in ni.interfaces():
+		d = ni.ifaddresses(i)
+		if len(d) > AF_INET:
+			print(d[AF_INET][0]['addr'])
 	server = WebsocketServer(13254, host='0.0.0.0')
 	server.set_fn_message_received(new_msg)
 	server.set_fn_new_client(new_client)
