@@ -76,7 +76,8 @@ def new_msg(client, server, message):
 
 def new_client(client, server):
 	print("New client")
-	client.send_message(str(action))
+	print(client)
+	server.send_message(client,str(action))
 
 
 with writer.as_default():
@@ -85,7 +86,7 @@ with writer.as_default():
 		d = ni.ifaddresses(i)
 		if len(d) > AF_INET:
 			print(d[AF_INET][0]['addr'])
-	server = WebsocketServer(13254, host='0.0.0.0')
+	server = WebsocketServer(443, host='0.0.0.0')
 	server.set_fn_message_received(new_msg)
 	server.set_fn_new_client(new_client)
 	server.run_forever()
